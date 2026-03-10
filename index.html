@@ -3,146 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedAlert Caregiver Portal</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
+    <title>MedAlert Pro Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+    
     <style>
-        body { background-color: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background-color: #1e293b; padding: 2rem; border-radius: 20px; width: 320px; text-align: center; border: 1px solid #38bdf8; position: relative; }
-        h1 { color: #38bdf8; letter-spacing: 2px; }
-        
-        /* Scroller UI */
-        .picker-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 20px 0; }
-        .column { display: flex; flex-direction: column; align-items: center; }
-        .num { font-size: 2.5rem; font-weight: bold; background: #0f172a; padding: 10px; border-radius: 10px; border: 1px solid #334155; min-width: 50px; }
-        .arrow { cursor: pointer; color: #38bdf8; font-size: 1.5rem; padding: 5px; user-select: none; }
-        .ampm { background: #334155; padding: 10px; border-radius: 5px; cursor: pointer; user-select: none; }
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #38bdf8;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #2ecc71;
+            --text: #f8fafc;
+        }
 
-        button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-save { background: #38bdf8; color: #000; }
-        .btn-silence { background: #334155; color: #f59e0b; border: 1px solid #f59e0b; }
-        .btn-reset { background: transparent; color: #ff4444; font-size: 0.8rem; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
 
-        /* Tracker Circles */
-        .history-section { margin-top: 20px; border-top: 1px solid #334155; padding-top: 15px; }
-        .day-grid { display: flex; justify-content: space-between; margin-top: 10px; }
-        .day-circle { width: 32px; height: 32px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: 0.3s; }
-        
-        #notify-status { font-size: 0.65rem; color: #00ff88; margin-bottom: 10px; display: block; }
+        .container {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 350px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .timer-setup {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px inset #334155;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input {
+            width: 60px;
+            background: transparent;
+            border: 2px solid #334155;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 8px;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        .btn-set { background: var(--primary); color: #0f172a; margin-top: 15px; }
+        .btn-stop { background: var(--warning); color: #fff; }
+        .btn-reset { background: var(--danger); color: #fff; }
+
+        .status-msg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            color: #94a3b8;
+            min-height: 20px;
+        }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #475569;
+        }
+
+        .online { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" onclick="enableInteraction()">
     <h1>MEDALERT</h1>
-    <span id="notify-status">Caregiver Notifications: ACTIVE</span>
-    
-    <p style="font-size: 0.7rem; color: #38bdf8;">SET MEDICATION TIME</p>
+    <p style="font-size: 0.9rem; opacity: 0.7;">Smart Pill Dispenser Control</p>
 
-    <div class="picker-container">
-        <div class="column">
-            <div class="arrow" onclick="changeVal('hr', 1)">▲</div>
-            <div class="num" id="hr">08</div>
-            <div class="arrow" onclick="changeVal('hr', -1)">▼</div>
+    <div class="timer-setup">
+        <p style="margin-top: 0; font-size: 0.8rem; color: var(--primary);">SET SCHEDULE (HH:MM:SS)</p>
+        <div class="input-group">
+            <input type="number" id="hrInput" placeholder="00" min="0" max="99">
+            <span>:</span>
+            <input type="number" id="minInput" placeholder="00" min="0" max="59">
+            <span>:</span>
+            <input type="number" id="secInput" placeholder="00" min="0" max="59">
         </div>
-        <div style="font-size: 2rem;">:</div>
-        <div class="column">
-            <div class="arrow" onclick="changeVal('min', 1)">▲</div>
-            <div class="num" id="min">00</div>
-            <div class="arrow" onclick="changeVal('min', -1)">▼</div>
-        </div>
-        <div class="ampm" id="ampm" onclick="toggleAMPM()">AM</div>
+        <button class="btn btn-set" onclick="setFullTime()">Update Schedule</button>
     </div>
 
-    <button class="btn-save" onclick="saveAlarm()">SAVE ALARM</button>
-    <button class="btn-silence" onclick="sendCommand('STOP')">SILENCE ALARM</button>
-    <button class="btn-reset" onclick="sendCommand('RESET')">RESET SYSTEM</button>
+    <button class="btn btn-stop" onclick="sendSignal('STOP')">Silence Alarm</button>
+    <button class="btn btn-reset" onclick="sendSignal('RESET')">Manual Reset</button>
 
-    <div class="history-section">
-        <p style="font-size: 0.8rem; margin: 0;">DOSAGE TRACKER</p>
-        <div id="day-grid" class="day-grid"></div>
+    <div class="status-msg">
+        <div id="statusDot" class="status-dot"></div>
+        <span id="status">System Connecting...</span>
     </div>
-    <p id="status" style="font-size: 0.8rem; color: #64748b; margin-top: 15px;">Hardware Connected</p>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
 <script>
-    // 1. Firebase Config
-    const firebaseConfig = { databaseURL: "https://medalert-6a59f-default-rtdb.firebaseio.com/" };
+    const firebaseConfig = {
+        databaseURL: "https://medalert-6a59f-default-rtdb.firebaseio.com/"
+    };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const database = firebase.database();
 
-    // 2. Timer Variables
-    let h = 8, m = 0, ap = "AM";
-
-    // 3. UI Functions
-    function changeVal(type, dir) {
-        if (type === 'hr') {
-            h += dir;
-            if (h > 12) h = 1;
-            if (h < 1) h = 12;
-            document.getElementById('hr').innerText = h < 10 ? "0" + h : h;
-        } else {
-            m += dir;
-            if (m > 59) m = 0;
-            if (m < 0) m = 59;
-            document.getElementById('min').innerText = m < 10 ? "0" + m : m;
+    // Interaction check for Browser Vibration [cite: 2026-03-01]
+    function enableInteraction() {
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
         }
     }
 
-    function toggleAMPM() { 
-        ap = ap === "AM" ? "PM" : "AM"; 
-        document.getElementById('ampm').innerText = ap; 
+    function setFullTime() {
+        const h = parseInt(document.getElementById("hrInput").value) || 0;
+        const m = parseInt(document.getElementById("minInput").value) || 0;
+        const s = parseInt(document.getElementById("secInput").value) || 0;
+        const totalSeconds = (h * 3600) + (m * 60) + s;
+        
+        if(totalSeconds > 0) {
+            database.ref('medalert/command').set("TIME:" + totalSeconds).then(() => {
+                showStatus(`Timer synced: ${h}h ${m}m ${s}s`);
+            });
+        }
     }
 
-    function saveAlarm() {
-        let hour24 = h;
-        if (ap === "PM" && h < 12) hour24 = h + 12;
-        if (ap === "AM" && h === 12) hour24 = 0;
-        let timeStr = (hour24 < 10 ? "0" + hour24 : hour24) + ":" + (m < 10 ? "0" + m : m);
-        db.ref("medalert/command").set("SET_ALARM:" + timeStr);
-        alert("Success: Alarm scheduled for " + h + ":" + (m < 10 ? "0" + m : m) + " " + ap);
+    function sendSignal(action) {
+        // Aligned with ESP32 Serial monitoring [cite: 2026-03-01]
+        database.ref('medalert/command').set(action).then(() => {
+            showStatus(`Command Sent: ${action}`);
+        });
     }
 
-    function sendCommand(cmd) { db.ref("medalert/command").set(cmd); }
+    function showStatus(msg) {
+        const statusEl = document.getElementById("status");
+        statusEl.innerText = msg;
+        setTimeout(() => { 
+            // Return to power status display [cite: 2026-03-01]
+            database.ref('medalert/system_power').once('value', (s) => {
+                statusEl.innerText = s.val() === "ON" ? "System Online" : "System Offline";
+            });
+        }, 3000);
+    }
 
-    // 4. Tracker Circle Setup
-    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    const grid = document.getElementById('day-grid');
-    days.forEach((d, i) => {
-        let div = document.createElement('div');
-        div.className = 'day-circle'; div.id = 'day-'+i; div.innerText = d;
-        grid.appendChild(div);
+    // MONITOR SYSTEM POWER [cite: 2026-03-01]
+    database.ref('medalert/system_power').on('value', (snapshot) => {
+        const status = snapshot.val();
+        const dot = document.getElementById("statusDot");
+        const text = document.getElementById("status");
+        if (status === "ON") {
+            dot.className = "status-dot online";
+            text.innerText = "System Online";
+        } else {
+            dot.className = "status-dot offline";
+            text.innerText = "System Offline";
+        }
     });
 
-    // 5. CAREGIVER NOTIFICATION & TRACKER LOGIC
-    // Request notification permission on load
-    if (Notification.permission !== "granted") { Notification.requestPermission(); }
-
-    db.ref("medalert/last_action").on("value", (snap) => {
-        const action = snap.val();
-        const today = new Date().getDay();
-        const circle = document.getElementById('day-'+today);
-
-        if (action === "Meds Taken") { 
-            circle.style.background = "#00ff88"; 
-            circle.style.color = "#000"; 
-            circle.style.boxShadow = "0 0 10px #00ff88";
-            
-            // Trigger Notification
+    // TRIGGER VIBRATION & NOTIFICATION [cite: 2026-03-01]
+    database.ref('medalert/alarm_trigger').on('value', (snapshot) => {
+        if (snapshot.val() === "ON") {
+            if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
             if (Notification.permission === "granted") {
-                new Notification("MedAlert Update", { body: "Confirmed: Medication has been taken!" });
+                new Notification("MEDALERT: Time for Medication!");
             }
-            alert("CAREGIVER NOTIFICATION: Patient has taken their meds.");
-        }
-        else if (action === "Missed") { 
-            circle.style.background = "#ff4444"; 
-            circle.style.boxShadow = "0 0 10px #ff4444";
-            if (Notification.permission === "granted") {
-                new Notification("ALERT", { body: "Warning: Medication dose was missed!" });
-            }
+        } else {
+            if (navigator.vibrate) navigator.vibrate(0);
         }
     });
 </script>
+
 </body>
 </html>
