@@ -9,26 +9,35 @@
 
     <style>
         body { background-color: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background-color: #1e293b; padding: 2rem; border-radius: 20px; width: 320px; text-align: center; border: 1px solid #38bdf8; }
+        .container { background-color: #1e293b; padding: 2rem; border-radius: 20px; width: 320px; text-align: center; border: 1px solid #38bdf8; position: relative; }
         h1 { color: #38bdf8; letter-spacing: 2px; }
+        
+        /* Scroller UI */
         .picker-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 20px 0; }
         .column { display: flex; flex-direction: column; align-items: center; }
         .num { font-size: 2.5rem; font-weight: bold; background: #0f172a; padding: 10px; border-radius: 10px; border: 1px solid #334155; min-width: 50px; }
         .arrow { cursor: pointer; color: #38bdf8; font-size: 1.5rem; padding: 5px; user-select: none; }
         .ampm { background: #334155; padding: 10px; border-radius: 5px; cursor: pointer; user-select: none; }
+
         button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
         .btn-save { background: #38bdf8; color: #000; }
         .btn-silence { background: #334155; color: #f59e0b; border: 1px solid #f59e0b; }
         .btn-reset { background: transparent; color: #ff4444; font-size: 0.8rem; }
+
+        /* Tracker Circles */
         .history-section { margin-top: 20px; border-top: 1px solid #334155; padding-top: 15px; }
         .day-grid { display: flex; justify-content: space-between; margin-top: 10px; }
         .day-circle { width: 32px; height: 32px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: 0.3s; }
+        
+        #notify-status { font-size: 0.65rem; color: #00ff88; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>MEDALERT</h1>
+    <span id="notify-status">Caregiver Notifications: ACTIVE</span>
+    
     <p style="font-size: 0.7rem; color: #38bdf8;">SET MEDICATION TIME</p>
 
     <div class="picker-container">
@@ -54,16 +63,19 @@
         <p style="font-size: 0.8rem; margin: 0;">DOSAGE TRACKER</p>
         <div id="day-grid" class="day-grid"></div>
     </div>
-    <p id="status" style="font-size: 0.8rem; color: #64748b; margin-top: 15px;">System Online</p>
+    <p id="status" style="font-size: 0.8rem; color: #64748b; margin-top: 15px;">Hardware Connected</p>
 </div>
 
 <script>
+    // 1. Firebase Config
     const firebaseConfig = { databaseURL: "https://medalert-6a59f-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // 2. Timer Variables
     let h = 8, m = 0, ap = "AM";
 
+    // 3. UI Functions
     function changeVal(type, dir) {
         if (type === 'hr') {
             h += dir;
@@ -89,11 +101,12 @@
         if (ap === "AM" && h === 12) hour24 = 0;
         let timeStr = (hour24 < 10 ? "0" + hour24 : hour24) + ":" + (m < 10 ? "0" + m : m);
         db.ref("medalert/command").set("SET_ALARM:" + timeStr);
-        alert("Alarm saved for " + h + ":" + (m < 10 ? "0" + m : m) + " " + ap);
+        alert("Success: Alarm scheduled for " + h + ":" + (m < 10 ? "0" + m : m) + " " + ap);
     }
 
     function sendCommand(cmd) { db.ref("medalert/command").set(cmd); }
 
+    // 4. Tracker Circle Setup
     const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     const grid = document.getElementById('day-grid');
     days.forEach((d, i) => {
@@ -102,18 +115,32 @@
         grid.appendChild(div);
     });
 
+    // 5. CAREGIVER NOTIFICATION & TRACKER LOGIC
+    // Request notification permission on load
+    if (Notification.permission !== "granted") { Notification.requestPermission(); }
+
     db.ref("medalert/last_action").on("value", (snap) => {
         const action = snap.val();
         const today = new Date().getDay();
         const circle = document.getElementById('day-'+today);
+
         if (action === "Meds Taken") { 
             circle.style.background = "#00ff88"; 
             circle.style.color = "#000"; 
             circle.style.boxShadow = "0 0 10px #00ff88";
+            
+            // Trigger Notification
+            if (Notification.permission === "granted") {
+                new Notification("MedAlert Update", { body: "Confirmed: Medication has been taken!" });
+            }
+            alert("CAREGIVER NOTIFICATION: Patient has taken their meds.");
         }
         else if (action === "Missed") { 
             circle.style.background = "#ff4444"; 
             circle.style.boxShadow = "0 0 10px #ff4444";
+            if (Notification.permission === "granted") {
+                new Notification("ALERT", { body: "Warning: Medication dose was missed!" });
+            }
         }
     });
 </script>
